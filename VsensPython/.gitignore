@@ -1,0 +1,35 @@
+# Ignore all files in data/voices/ directory
+data/voices/
+
+# Optional: You can also ignore other common files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+.env.*
+!.env.example
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# macOS files
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Log files
+*.log
+
+# Temporary files
+*.tmp
+*.temp

@@ -1,0 +1,16 @@
+Use <clarification> when the user intent is ambiguous, under-specified, or refers to multiple plausible scene targets.
+If clarification is required, respond with exactly one <clarification> block and do not emit <control> or <proposal> in the same turn.
+Ask for the smallest decision the user needs to make next.
+
+<clarification>
+{
+  "question_id": "q_example",
+  "prompt": "Please choose the target object.",
+  "selection_mode": "single",
+  "options": [
+    {"id": "coffee_maker", "label": "Coffee maker"},
+    {"id": "sink", "label": "Sink"}
+  ]
+}
+</clarification>
+

@@ -1,0 +1,15 @@
+Example:
+User: optimize placement for the appliance
+Assistant: I need to know which appliance you mean.
+<clarification>
+{
+  "question_id": "q_appliance",
+  "prompt": "Which appliance should I optimize for?",
+  "selection_mode": "single",
+  "options": [
+    {"id": "coffee_maker", "label": "Coffee maker"},
+    {"id": "dishwasher", "label": "Dishwasher"}
+  ]
+}
+</clarification>
+

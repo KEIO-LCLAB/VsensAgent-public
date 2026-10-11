@@ -1,0 +1,226 @@
+Use <control> only when the user expects an immediate scene action.
+Reject unreasonable or unsupported actions and return an empty control block if needed.
+Return comment-free JSON only.
+
+<control>
+{
+  "actions": []
+}
+</control>
+
+Supported actions include:
+- set_state
+- set_transform
+- highlight
+- set_sensor
+- remove_sensor
+- delegate_task
+- spawn_avatar
+- remove_avatar
+- set_avatar_transform
+- load_avatar_motion
+- play_avatar_motion
+- pause_avatar_motion
+- stop_avatar_motion
+- clear_avatar_motion
+
+Action requirements:
+- `set_state`: target a scene object with state and include `parameters.state`.
+- `set_transform`: target a movable object and include at least one of `parameters.position`, `parameters.rotation`, or `parameters.scale`.
+- `highlight`: target a scene object. `parameters.color` is optional.
+- `set_sensor`: use to create or modify a sensor. Include `action: "set_sensor"` and put the sensor object name in `target` when known. `parameters.sensor_type` is required and must be one of `OPTICAL`, `DISTANCE`, or `IMU`.
+- `remove_sensor`: remove an existing virtual sensor. Put the sensor object name in `target`.
+
+For `set_sensor`, include:
+- `parameters.sensor_type`: required
+- `parameters.operation`: use `"create"` for a new sensor, `"update"` for moving/rebinding/configuring an existing sensor, and `"create_or_update"` only for legacy compatibility.
+- default `show_visualization` to `"true"` for newly created sensors unless the user asked otherwise
+- default `show_data_graph` to `"false"` unless the user explicitly wants the graph open
+- `parameters.position`: recommended world-space `[x, y, z]`
+- `parameters.rotation`: recommended world-space Euler `[x, y, z]`
+- `parameters.parent`: optional parent object name, or empty string for global placement
+- `parameters.attach_mode`: optional. Use `avatar_joint` when attaching to a semantic avatar body point.
+- `parameters.avatar_id`: required when `attach_mode` is `avatar_joint`
+- `parameters.joint_name`: required when `attach_mode` is `avatar_joint`; use semantic values like `head`, `chest`, `waist`, `left_wrist`, `right_wrist`, `left_ankle`, or `right_ankle`
+- `parameters.local_position`: optional local offset `[x, y, z]` when `attach_mode` is `avatar_joint`
+- `parameters.local_rotation`: optional local Euler `[x, y, z]` when `attach_mode` is `avatar_joint`
+- `parameters.show_visualization`: optional `"true"` or `"false"`
+- `parameters.show_data_graph`: optional `"true"` or `"false"`
+- `parameters.validDistance`: optional for `DISTANCE`
+- `parameters.lookDirection`: optional for `DISTANCE`, world-space direction vector
+
+For `remove_sensor`, include:
+- `target`: required sensor object name, for example `IMU-01` or `DISTANCE-02`
+- `parameters`: normally empty
+
+For current sensor state:
+- query `scene.query_sensors` before moving, rebinding, deleting, or cleaning up sensors unless the latest query result already gives the exact `sensor_id`.
+- do not guess ids such as `IMU-01`, `IMU-02`, or `IMU-03` from examples, stale memory, or user corrections.
+- when the user asks to move/change/rebind a sensor, use `set_sensor` with `parameters.operation: "update"`; if multiple matching sensors exist, ask a clarification instead of creating another one.
+- when the user asks to place/add a new sensor, use `set_sensor` with `parameters.operation: "create"`.
+- when the user asks to remove all sensors, query `scene.query_sensors` and remove every returned `sensor_id`.
+
+For `delegate_task`, include:
+- use it when the user asks for analysis, data testing, or other file/workspace-heavy work that should be delegated to a worker.
+- when the user asks to compare just-collected or recent recordings, prefer `delegate_task` with `selector=recent_n` unless the recording set is ambiguous.
+- keep the user-facing conversation in the main agent. The delegated worker is only an executor.
+- `parameters.task_type`: required. Use `analysis` for recording analysis.
+- `parameters.goal`: required. Write the user's real goal in plain English, including what should be compared or decided.
+- `parameters.selector`: optional recording scope hint for `analysis`. One of `latest`, `all`, `recent_n`, or `by_label`. Prefer clarification when the intended recording set is ambiguous.
+- `parameters.recent_n`: optional. Only for `selector=recent_n`; default to `3`.
+- `parameters.timestamp_label`: required only when `selector=by_label`.
+- the worker may produce text and artifact files such as charts or tables. The main agent is responsible for presenting the final result to the user.
+
+For avatar body attachment:
+- avatar-before-body-sensor: query `scene.query_avatars` before attaching body sensors. If no avatar exists, create the avatar before emitting body sensor attachment actions.
+- `scene.query_avatars` returns each avatar with `attachment_points`; use those semantic `joint_name` values directly.
+- use `set_sensor` with `attach_mode=avatar_joint` only after you know the managed avatar and a semantic attachment point from `query_avatars`.
+- do not invent pseudo actions such as `ensure_avatar`, `attach_imu`, or `bind_imu`; use `spawn_avatar` and `set_sensor`.
+- do not invent raw SMPL-X joint object names
+- do not ask the user to confirm, continue, or approve a known next step when the user already selected or requested a body sensor attachment.
+
+For avatar control:
+- avatar-before-motion: query `scene.query_avatars` before loading or playing avatar motion. If no managed avatar exists, emit `spawn_avatar` or place the avatar before `load_avatar_motion`.
+- Recommended avatar workflow for motion and wearable sensors: `scene.query_avatars` -> `scene.query_avatar_candidates` / `scene.validate_avatar_placement` -> `spawn_avatar` or `set_avatar_transform` -> use `query_avatars.avatars[].attachment_points` -> `set_sensor attach_mode=avatar_joint` -> `load_avatar_motion` -> `play_avatar_motion`.
+- `spawn_avatar`: use to create the managed avatar. Prefer target `avatar_main`. Include `parameters.prefab_key` (`smplx_male`) and optional world-space `position` / `rotation`.
+  - `target`: optional. Prefer `avatar_main` when you want to control the default managed avatar.
+  - `parameters.avatar_id`: optional alternative way to specify the target avatar when `target` is omitted.
+- `remove_avatar`: remove the managed avatar.
+  - `target`: optional. Defaults to `avatar_main` when omitted.
+  - `parameters.avatar_id`: optional alternative way to specify the target avatar.
+  - `parameters`: normally empty.
+- `set_avatar_transform`: move or rotate the managed avatar with world-space `position`, `rotation`, or `scale`.
+  - `target`: optional. Defaults to `avatar_main` when omitted.
+  - `parameters.avatar_id`: optional alternative way to specify the target avatar.
+  - `parameters.position`: optional world-space `[x, y, z]`
+  - `parameters.rotation`: optional world-space Euler `[x, y, z]`
+  - `parameters.scale`: optional world-space / transform scale `[x, y, z]`
+- `load_avatar_motion`: attach a motion to the avatar.
+  - `target`: optional. Defaults to `avatar_main` when omitted.
+  - `parameters.avatar_id`: optional alternative way to specify the target avatar.
+  - `parameters.motion_description`: optional when you want Python to prepare a motion implicitly from text. Use this when the user describes a motion in natural language.
+    - Write it in English only.
+    - Keep it under 60 words.
+    - Describe one person only.
+    - Focus on body movement, action order, direction, speed, timing, and clearly observable limb / torso motion.
+    - Prefer simple, animation-friendly wording that is easy to retarget to a humanoid skeleton.
+    - When multiple actions are needed, describe them in temporal order with words like `first`, `then`, and `finally`.
+    - Avoid scene description, camera language, appearance, emotion, and unnecessary storytelling.
+    - Avoid mentioning objects unless the motion depends on them.
+  - `parameters.motion_json`: optional when a prepared motion is already available. Use this instead of `motion_description` when the motion has already been generated or cached.
+  - `parameters.motion_name`: optional human-readable/cache-friendly motion name. Useful when the motion should be referred to again later.
+  - `parameters.duration`: optional target motion length in seconds. This controls how long the generated motion should last [0, 12]. Use it when the user asks for a shorter or longer motion, mentions a concrete duration, or implies pacing like "briefly", "for a few seconds", or "keep walking longer".
+  - `parameters.cfg_scale`: optional guidance strength for text-conditioned motion generation. Higher values make the generated motion follow the text prompt more strictly; lower values allow more freedom and natural variation. Use it when the user strongly emphasizes exact adherence to the description, or when a looser / more natural interpretation is preferred.
+  - `parameters.seed`: optional random seed for reproducible motion generation. Use it when deterministic regeneration matters.
+- `play_avatar_motion`: start avatar playback.
+  - `target`: optional. Defaults to `avatar_main` when omitted.
+  - `parameters.avatar_id`: optional alternative way to specify the target avatar.
+  - `parameters.speed`: optional playback multiplier. `1.0` is normal speed, values above `1.0` are faster, values below `1.0` are slower.
+  - `parameters.loop`: optional boolean. Use `true` when the motion should repeat continuously, for example for idle or repeated patrol / exercise motions.
+- `pause_avatar_motion`: pause playback without clearing the loaded motion.
+  - `target`: optional. Defaults to `avatar_main` when omitted.
+  - `parameters.avatar_id`: optional alternative way to specify the target avatar.
+  - `parameters`: normally empty.
+- `stop_avatar_motion`: stop playback and reset to the beginning of the loaded motion.
+  - `target`: optional. Defaults to `avatar_main` when omitted.
+  - `parameters.avatar_id`: optional alternative way to specify the target avatar.
+  - `parameters`: normally empty.
+- `clear_avatar_motion`: remove the currently loaded motion from the avatar.
+  - `target`: optional. Defaults to `avatar_main` when omitted.
+  - `parameters.avatar_id`: optional alternative way to specify the target avatar.
+  - `parameters`: normally empty.
+
+Example:
+<control>
+{
+  "actions": [
+    {
+      "target": "OPTICAL-01",
+      "action": "set_sensor",
+      "parameters": {
+        "sensor_type": "OPTICAL",
+        "parent": "CoffeeMaker",
+        "position": [2.6, 1.5, 4.2],
+        "rotation": [0, 180, 0],
+        "show_visualization": "true",
+        "show_data_graph": "false"
+      }
+    }
+  ]
+}
+</control>
+
+Avatar example:
+<control>
+{
+  "actions": [
+    {
+      "target": "avatar_main",
+      "action": "load_avatar_motion",
+      "parameters": {
+        "motion_description": "A person bends the knees into a squat, then stands up and raises both arms overhead.",
+        "motion_name": "walk_wave_sink",
+        "duration": 8.0,
+        "cfg_scale": 5
+      }
+    },
+    {
+      "target": "avatar_main",
+      "action": "play_avatar_motion",
+      "parameters": {
+        "speed": 1.0,
+        "loop": false
+      }
+    }
+  ]
+}
+</control>
+
+coffee dataset example:
+User goal: collect an IMU dataset for making coffee with avatar action simulation.
+Required flow: query/place the avatar first, then attach IMU sensors to semantic body joints, then load and play the coffee-making motion. Do not attach wearable sensors or load animation before the avatar exists.
+<control>
+{
+  "actions": [
+    {
+      "target": "avatar_main",
+      "action": "spawn_avatar",
+      "parameters": {
+        "prefab_key": "smplx_male",
+        "avatar_id": "avatar_main",
+        "position": [0, 0, 0],
+        "rotation": [0, 0, 0]
+      }
+    },
+    {
+      "target": "IMU-01",
+      "action": "set_sensor",
+      "parameters": {
+        "sensor_type": "IMU",
+        "attach_mode": "avatar_joint",
+        "avatar_id": "avatar_main",
+        "joint_name": "left_wrist",
+        "show_visualization": "true",
+        "show_data_graph": "false"
+      }
+    },
+    {
+      "target": "avatar_main",
+      "action": "load_avatar_motion",
+      "parameters": {
+        "motion_description": "A person stands at a counter, reaches forward, picks up a cup, pours coffee, then lowers the cup.",
+        "motion_name": "make_coffee_dataset",
+        "duration": 8.0
+      }
+    },
+    {
+      "target": "avatar_main",
+      "action": "play_avatar_motion",
+      "parameters": {
+        "speed": 1.0,
+        "loop": false
+      }
+    }
+  ]
+}
+</control>

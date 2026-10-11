@@ -1,0 +1,31 @@
+Example:
+User: suggest placements near the coffee maker
+Assistant: I need to inspect the target object first.
+<query>
+{
+  "method": "scene.query_objects",
+  "params": {
+    "ids": [],
+    "aliases": ["CoffeeMaker"],
+    "tags": [],
+    "zone_id": ""
+  },
+  "reason": "Need the target object's canonical identity and bounds."
+}
+</query>
+
+Example:
+User: place the avatar so it can make coffee naturally
+Assistant: I need validated standing candidates before placing the avatar.
+<query>
+{
+  "method": "scene.query_avatar_candidates",
+  "params": {
+    "target_alias": "CoffeeMaker",
+    "task_hint": "make_coffee",
+    "preferred_side": "front",
+    "max_candidates": 3
+  },
+  "reason": "Need validated avatar standing candidates before spawning or moving the avatar."
+}
+</query>

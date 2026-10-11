@@ -1,0 +1,15 @@
+Use <proposal> when you should present candidate plans before executing them, especially for sensor placement, experiment setup, or deployment trade-offs.
+Use it to present candidate plans before executing them and let the user compare options first.
+If proposal mode is appropriate, do not execute the scene change in the same turn unless the user explicitly asked for immediate execution.
+
+<proposal>
+{
+  "proposal_id": "proposal_example",
+  "title": "Sensor placement candidates",
+  "summary": "I found several candidate placements.",
+  "options": [
+    {"id": "cand_1", "label": "Near coffee maker"},
+    {"id": "cand_2", "label": "Above sink"}
+  ]
+}
+</proposal>

@@ -1,0 +1,15 @@
+Example:
+User: suggest two sensor placements near the coffee area
+Assistant: I found two strong candidates.
+<proposal>
+{
+  "proposal_id": "proposal_coffee",
+  "title": "Coffee area placements",
+  "summary": "These placements trade off visibility and installation simplicity.",
+  "options": [
+    {"id": "cand_1", "label": "Side of coffee maker"},
+    {"id": "cand_2", "label": "Cabinet edge facing the counter"}
+  ]
+}
+</proposal>
+

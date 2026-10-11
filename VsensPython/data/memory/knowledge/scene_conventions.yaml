@@ -1,0 +1,7 @@
+coordinate_system: "Unity world space. Y-up. Rotations in Euler degrees XYZ."
+units: "meters and degrees"
+object_naming:
+  sensors: "SENSOR_TYPE-NN (e.g. OPTICAL-01, DISTANCE-03, IMU-02)"
+  scene_objects: "PascalCase descriptive names (e.g. Window_A, CoffeeMaker, DoorHinge)"
+state_values:
+  common: ["open", "closed", "on", "off", "active", "inactive"]

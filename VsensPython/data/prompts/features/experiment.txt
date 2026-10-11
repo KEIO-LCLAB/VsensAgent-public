@@ -1,0 +1,61 @@
+Use <experiment> when the user wants the agent to run a multi-step dataset collection or experiment workflow with recording phases, timed actions, and optional analysis.
+Do not use <experiment> for a single immediate scene edit; use <control> for that.
+
+Experiment workflow classification:
+- object-state workflow: use this for simple object or environment state detection such as refrigerator door open/close, light on/off, or distance-to-door thresholding. Do not create an avatar unless the user explicitly wants a human actor.
+- embodied-human/activity workflow: use this for human activity recognition, cooking, washing dishes, making coffee, wearable IMU collection, avatar animation, body joint attachment, or distinguishing one human action/location from another. Query or create/place the managed avatar, then attach sensors, load motion, play motion, and record labeled phases.
+- Use `actor_mode: "auto"` by default. Use `actor_mode: "avatar"` for cooking, making coffee, washing dishes, or other embodied activity simulation unless the user explicitly says a real person will perform the motion manually. Use `actor_mode: "manual"` for object-state workflows or user-performed recordings.
+- For activity phases, include `target_alias` or `anchor_alias` when the semantic target is clear, for example CoffeeMaker for making coffee, Stove for cooking, Sink for washing dishes, and Fridge or Fridge_Door_* for refrigerator-door data.
+- If a target object cannot be resolved or there are multiple plausible targets, do not ask the user to type a name; the backend can send `object_selection.request` so the user clicks the target object in Unity.
+
+For embodied-human/activity workflow, query or set up avatar prerequisites before recording:
+scene.query_avatars -> scene.query_avatar_candidates / scene.validate_avatar_placement -> spawn_avatar or set_avatar_transform -> use `query_avatars.avatars[].attachment_points` -> set_sensor -> load_avatar_motion -> play_avatar_motion.
+Do not invent setup action names such as `ensure_avatar` or `attach_imu`. Use only supported scene actions. To ensure an avatar exists, query `scene.query_avatars` and then use `spawn_avatar` when absent. To attach an IMU to a body joint, use `set_sensor` with `sensor_type: "IMU"`, `attach_mode: "avatar_joint"`, `avatar_id`, and a semantic `joint_name` from `query_avatars`.
+
+Recording actions available through scene.execute_actions:
+- start_sensor_recording with parameters recording_label, goal, and optional initial_phase
+- mark_recording_phase with parameters phase_label and optional note
+- stop_sensor_recording with parameters upload_snapshot
+
+Use scene.query_recording_status when you need to know whether Unity is already recording.
+
+Each phase must include a clear label and duration_s. If the user gives a range such as 10-20 seconds, choose the midpoint by default. Ask a clarification only when the target labels, sensor target, or collection goal cannot be inferred.
+
+When the goal implies comparison, classification, thresholding, or deciding which data fits the target, set analysis.run_after to true. For ordinary recording, set it to false and only offer analysis after sync.
+
+<experiment>
+{
+  "goal": "distinguish cooking at the stove from washing dishes at the sink",
+  "actor_mode": "auto",
+  "requires_avatar": true,
+  "setup_actions": [],
+  "recording": {
+    "sensors": ["DISTANCE-01"],
+    "auto_upload": true
+  },
+  "phases": [
+    {
+      "label": "cooking",
+      "target_alias": "Stove",
+      "duration_s": 15,
+      "actions": [],
+      "motion_description": "A person stands near the stove and performs repeated cooking motions with the hands."
+    },
+    {
+      "label": "washing_dishes",
+      "target_alias": "Sink",
+      "duration_s": 15,
+      "actions": [],
+      "motion_description": "A person stands near the sink and performs repeated dish-washing motions with both hands."
+    }
+  ],
+  "repeat": 2,
+  "analysis": {
+    "run_after": true,
+    "goal": "find a distance threshold separating cooking and washing dishes"
+  }
+}
+</experiment>
+
+Object-state workflow example:
+Use a distance or IMU sensor to collect refrigerator door open/close data. Start recording, mark the closed phase, set or ask the user to close the door, mark the open phase, set or ask the user to open the door, then stop recording. No avatar is required.

@@ -1,0 +1,3 @@
+Every response should contain a brief natural-language reply suitable for speech synthesis.
+When structured output is needed, include exactly one matching block for that interaction type.
+Do not include comments inside JSON blocks.

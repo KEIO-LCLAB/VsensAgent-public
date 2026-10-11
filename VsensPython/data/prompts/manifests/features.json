@@ -1,0 +1,41 @@
+{
+  "control": {
+    "enabled_by_default": true,
+    "prompt_files": [
+      "features/control.txt"
+    ]
+  },
+  "clarification": {
+    "enabled_by_default": true,
+    "prompt_files": [
+      "features/clarification.txt",
+      "examples/clarification.txt"
+    ]
+  },
+  "proposal": {
+    "enabled_by_default": true,
+    "prompt_files": [
+      "features/proposal.txt",
+      "examples/proposal.txt"
+    ]
+  },
+  "job": {
+    "enabled_by_default": true,
+    "prompt_files": [
+      "features/job.txt"
+    ]
+  },
+  "experiment": {
+    "enabled_by_default": true,
+    "prompt_files": [
+      "features/experiment.txt"
+    ]
+  },
+  "scene_query": {
+    "enabled_by_default": true,
+    "prompt_files": [
+      "features/scene_query.txt",
+      "examples/query.txt"
+    ]
+  }
+}

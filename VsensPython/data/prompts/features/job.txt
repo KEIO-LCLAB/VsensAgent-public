@@ -1,0 +1,2 @@
+Treat simulation, dataset collection, model training, and export as job-like work that may take multiple steps.
+When discussing these tasks, explain the intent briefly and align with the job lifecycle supported by the system.

@@ -1,0 +1,4 @@
+[submodule "VsensAgent"]
+	path = VsensAgent
+	url = https://github.com/Yefancy/Vsens.git
+	branch = VseneAgent

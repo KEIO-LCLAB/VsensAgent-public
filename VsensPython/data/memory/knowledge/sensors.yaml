@@ -1,0 +1,20 @@
+sensors:
+  OPTICAL:
+    description: "Light intensity sensor. Reports normalised ambient light level at the sensor position."
+    typical_placement: "Attach to surface facing the illuminated zone."
+    value_range: [0.0, 1.0]
+    value_notes: "0.0 = fully dark, 1.0 = at or above maxIntensity threshold."
+    key_parameters: []
+  DISTANCE:
+    description: "Range finder. Raycasts along lookRay and reports distance to the nearest collider."
+    typical_placement: "Mount facing open space along the measurement axis."
+    value_range: [0.0, "validDistance"]
+    value_notes: "Float in metres. Equals validDistance when no object is within range."
+    key_parameters: ["validDistance", "lookRay"]
+    snapshot_fields: ["value", "validDistance", "lookRay", "startPoint"]
+  IMU:
+    description: "Inertial sensor. Streams orientation, world-space acceleration, local acceleration, and position at the sampling interval."
+    typical_placement: "Attach to a moving object (body segment, door hinge, etc.)."
+    value_notes: "No scalar 'value' field in scene snapshot. Streaming data is emitted as {orientation, acceleration, localAcceleration, location} per sample."
+    key_parameters: []
+    snapshot_fields: []

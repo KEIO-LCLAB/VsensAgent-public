@@ -1,0 +1,77 @@
+# VsensPython/config/perception.yaml
+# ──────────────────────────────────────────────────────────────────────────────
+# Phase 3 — Heartbeat / Proactive Perception — Tunable Parameters
+#
+# All thresholds, intervals, and behaviour switches live here.
+# Edit this file and restart the server to apply changes without touching code.
+# ──────────────────────────────────────────────────────────────────────────────
+
+# ── Heartbeat interval ────────────────────────────────────────────────────────
+heartbeat:
+  # Recommended scene_heartbeat send interval for the Unity client (seconds).
+  # Python broadcasts this as part of the server_config message on connect so
+  # Unity can set its coroutine interval dynamically.
+  # Start loose at 5 s; tighten once latency and bandwidth are characterised.
+  interval_s: 5.0
+
+  # Snapshot strategy:
+  #   "full"  — Unity always sends the entire scene; Python internally diffs.
+  #   (Do not change; Unity always sends full snapshots. Python handles delta.)
+  snapshot_mode: full
+
+
+# ── Diff detection thresholds ─────────────────────────────────────────────────
+diff:
+  # Minimum absolute value change to flag a continuous sensor (e.g. DISTANCE).
+  continuous_abs_threshold: 0.10
+
+  # Minimum relative change (fraction, 0–1) to flag a continuous sensor.
+  # e.g. 0.20 = flag if value changed by ≥ 20% from the previous reading.
+  continuous_rel_threshold: 0.20
+
+  # Relative jump required to upgrade a SENSOR_TRIGGER to SENSOR_ANOMALY.
+  # e.g. 0.50 = flag anomaly if value jumped ≥ 50% in one heartbeat.
+  sensor_anomaly_rel_threshold: 0.50
+
+  # User position delta (in metres) per heartbeat to raise USER_PROXIMITY.
+  user_proximity_threshold_m: 0.50
+
+
+# ── Attention gate ────────────────────────────────────────────────────────────
+attention:
+  # Events with severity >= threshold wake the LLM. Range: 0.0 – 1.0.
+  threshold: 0.5
+
+  # Per-event-type severity weights.
+  # Increase a weight to make that event type more likely to wake the LLM.
+  severity:
+    SENSOR_TRIGGER:  0.8
+    SENSOR_ANOMALY:  0.7
+    STATE_CHANGE:    0.6
+    OBJECT_ADDED:    0.5
+    OBJECT_REMOVED:  0.5
+    USER_PROXIMITY:  0.4   # informational only — below threshold
+    NO_OP:           0.0
+
+
+# ── Duplicate push cooldown ───────────────────────────────────────────────────
+cooldown:
+  # Whether per-object cooldown is active.
+  enabled: true
+
+  # Minimum seconds between agent_push events for the same scene object.
+  # Prevents rapid sensor oscillation (e.g. OPTICAL flickering) from
+  # spamming the LLM and the Unity client.
+  per_object_s: 10.0
+
+
+# ── agent_push TTS ────────────────────────────────────────────────────────────
+agent_push:
+  # false → agent_push contains only text "message" (Unity handles TTS / display).
+  # true  → Python generates audio via OpenAI TTS and adds "audio_path" to the
+  #          agent_push message, exactly like agent_ready.
+  tts_enabled: false
+
+  # OpenAI TTS voice used when tts_enabled = true.
+  # Options: alloy, echo, fable, onyx, nova, shimmer
+  tts_voice: alloy

@@ -1,0 +1,36 @@
+Use a query-first workflow when you need more scene detail before giving a recommendation or action.
+Prefer read-only scene queries before proposing placement or execution details.
+
+Relevant query-first methods include:
+- scene.query_summary
+- scene.query_objects
+- scene.query_relations
+- scene.query_surfaces
+- scene.query_avatars
+- scene.query_motions
+- scene.query_sensors
+- scene.query_avatar_candidates
+- scene.validate_avatar_placement
+- scene.capture_validation_views
+- scene.query_recording_status
+
+Use these queries to inspect candidate objects, nearby mountable surfaces, semantic/spatial relations, the managed avatar state, avatar `attachment_points` returned by `scene.query_avatars`, current runtime sensors returned by `scene.query_sensors`, motions already prepared in the runtime, avatar standing candidates, validation results, and validation screenshots.
+Do not invent scene facts when a query-first lookup would be the correct next step.
+For sensor edits, moves, rebinding, deletion, or "all sensors" cleanup, query `scene.query_sensors` first unless the latest query result already names the exact sensor ids. Do not infer current sensor ids from examples, stale memory, or user corrections.
+For object lookup, use the current scene memory first, then use alias-first query lookup with `scene.query_objects` when you need canonical details. The current scene memory comes from the latest heartbeat/session snapshot and may already list objects such as Door_A, Door_B, Stove, Sink, and sensors.
+`scene.query_objects` supports all-object lookup with no filters and exact-first/fuzzy alias lookup. A query such as aliases ["Door"] can match Door_A, Door_B, or Cabinet_*_Door*; an empty result after memory and query lookup is the only time you should say the object is not exposed.
+Do not ask the user to type or expose a common scene object that may already exist. If automatic lookup is ambiguous, rely on the backend `object_selection.request` pick flow so the user can click the target object in Unity.
+When query-first is required, respond with exactly one internal <query> block and do not emit <control>, <proposal>, or <clarification> in the same step.
+
+<query>
+{
+  "method": "scene.query_objects",
+  "params": {
+    "ids": [],
+    "aliases": ["CoffeeMaker"],
+    "tags": [],
+    "zone_id": ""
+  },
+  "reason": "Need canonical object identity before proposing placement."
+}
+</query>
